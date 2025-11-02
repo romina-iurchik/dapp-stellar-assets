@@ -10,13 +10,14 @@ export default function WalletConnect({ onConnect }: Props) {
   const [publicKey, setPublicKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copiado, setCopiado] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Check if wallet is already connected
   useEffect(() => {
     if (!mounted) return;
 
@@ -24,10 +25,9 @@ export default function WalletConnect({ onConnect }: Props) {
       try {
         const freighter = await import('@stellar/freighter-api');
         const connected = await freighter.isConnected();
-
         if (connected) {
           const result = await freighter.getAddress();
-          if (result.address && result.address !== '') {
+          if (result.address) {
             setPublicKey(result.address);
             onConnect(result.address);
           }
@@ -45,52 +45,44 @@ export default function WalletConnect({ onConnect }: Props) {
     setError(null);
 
     try {
-      if (typeof window === 'undefined') {
-        throw new Error('Este código solo funciona en el navegador');
-      }
+      if (typeof window === 'undefined') throw new Error('Solo funciona en el navegador');
 
       const freighter = await import('@stellar/freighter-api');
       const connected = await freighter.isConnected();
 
-      if (!connected) {
-        throw new Error('Por favor instala Freighter desde https://freighter.app');
-      }
+      if (!connected) throw new Error('Instala Freighter desde https://freighter.app');
 
       const accessResult = await freighter.requestAccess();
-
-      if (accessResult.error) {
-        throw new Error(`Acceso denegado: ${accessResult.error}`);
-      }
+      if (accessResult.error) throw new Error(`Acceso denegado: ${accessResult.error}`);
 
       const addressResult = await freighter.getAddress();
-
-      if (addressResult.address && addressResult.address !== '') {
+      if (addressResult.address) {
         setPublicKey(addressResult.address);
         onConnect(addressResult.address);
       } else {
         throw new Error('No se pudo obtener la dirección. Verifica que Freighter esté desbloqueado.');
       }
     } catch (err: any) {
-      console.error('❌ Error:', err);
+      console.error('Error conectando wallet:', err);
       setError(err.message || 'Error al conectar');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatAddress = (addr: string) =>
-    addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(publicKey);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 1500);
-  };
-
   const disconnectWallet = () => {
     setPublicKey('');
     onConnect('');
   };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(publicKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const formatAddress = (addr: string) =>
+    addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
 
   if (!mounted) return null;
 
@@ -101,7 +93,7 @@ export default function WalletConnect({ onConnect }: Props) {
       </h2>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-900/40 border border-red-500 rounded text-sm text-red-200 text-center">
+        <div className="mb-4 p-3 bg-red-900/80 border border-red-500 rounded text-sm text-red-200 text-center">
           {error}
         </div>
       )}
@@ -127,14 +119,7 @@ export default function WalletConnect({ onConnect }: Props) {
             ✅ Wallet Conectada
           </p>
 
-          {/* Cartelito de copiado */}
-          {copiado && (
-            <div className="mb-2 px-3 py-1 bg-yellow-500/80 text-black text-sm rounded shadow-md text-center animate-fade-in-out">
-              ¡Copiado!
-            </div>
-          )}
-
-          <div className="flex items-center justify-between bg-green-900/50 px-3 py-2 rounded border border-yellow-400/30">
+          <div className="flex items-center justify-between bg-green-900/70 px-3 py-2 rounded border border-yellow-400/40 mb-3">
             <p className="text-sm font-mono break-all text-yellow-200">
               {formatAddress(publicKey)}
             </p>
@@ -146,9 +131,15 @@ export default function WalletConnect({ onConnect }: Props) {
             </button>
           </div>
 
+          {copied && (
+            <div className="mb-3 p-2 bg-yellow-500/90 text-black text-center rounded animate-fade-in-out text-sm">
+              ¡Copiado al portapapeles!
+            </div>
+          )}
+
           <button
             onClick={disconnectWallet}
-            className="mt-3 w-full px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition shadow-md"
+            className="w-full px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded transition shadow-md"
           >
             Desconectar
           </button>
