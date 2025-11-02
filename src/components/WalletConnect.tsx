@@ -10,6 +10,7 @@ export default function WalletConnect({ onConnect }: Props) {
   const [publicKey, setPublicKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -55,14 +56,12 @@ export default function WalletConnect({ onConnect }: Props) {
         throw new Error('Por favor instala Freighter desde https://freighter.app');
       }
 
-      console.log('🔐 Solicitando acceso a Freighter...');
       const accessResult = await freighter.requestAccess();
 
       if (accessResult.error) {
         throw new Error(`Acceso denegado: ${accessResult.error}`);
       }
 
-      console.log('🔑 Obteniendo dirección...');
       const addressResult = await freighter.getAddress();
 
       if (addressResult.address && addressResult.address !== '') {
@@ -84,7 +83,13 @@ export default function WalletConnect({ onConnect }: Props) {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(publicKey);
-    alert('¡Copiado!');
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 1500);
+  };
+
+  const disconnectWallet = () => {
+    setPublicKey('');
+    onConnect('');
   };
 
   if (!mounted) return null;
@@ -121,6 +126,14 @@ export default function WalletConnect({ onConnect }: Props) {
           <p className="text-yellow-300 font-bold text-center mb-2">
             ✅ Wallet Conectada
           </p>
+
+          {/* Cartelito de copiado */}
+          {copiado && (
+            <div className="mb-2 px-3 py-1 bg-yellow-500/80 text-black text-sm rounded shadow-md text-center animate-fade-in-out">
+              ¡Copiado!
+            </div>
+          )}
+
           <div className="flex items-center justify-between bg-green-900/50 px-3 py-2 rounded border border-yellow-400/30">
             <p className="text-sm font-mono break-all text-yellow-200">
               {formatAddress(publicKey)}
@@ -132,6 +145,13 @@ export default function WalletConnect({ onConnect }: Props) {
               Copiar
             </button>
           </div>
+
+          <button
+            onClick={disconnectWallet}
+            className="mt-3 w-full px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition shadow-md"
+          >
+            Desconectar
+          </button>
         </div>
       )}
     </div>
