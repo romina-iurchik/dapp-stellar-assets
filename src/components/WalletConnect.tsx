@@ -22,9 +22,8 @@ export default function WalletConnect({ onConnect }: Props) {
     const checkConnection = async () => {
       try {
         const freighter = await import('@stellar/freighter-api');
-        
         const connected = await freighter.isConnected();
-        
+
         if (connected) {
           const result = await freighter.getAddress();
           if (result.address && result.address !== '') {
@@ -36,41 +35,36 @@ export default function WalletConnect({ onConnect }: Props) {
         console.error('Error checking connection:', err);
       }
     };
-    
+
     checkConnection();
   }, [mounted, onConnect]);
 
   const connectWallet = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       if (typeof window === 'undefined') {
         throw new Error('Este código solo funciona en el navegador');
       }
 
       const freighter = await import('@stellar/freighter-api');
-      
       const connected = await freighter.isConnected();
-      
+
       if (!connected) {
         throw new Error('Por favor instala Freighter desde https://freighter.app');
       }
 
-      // 🔥 ESTO ES LO IMPORTANTE: Solicitar acceso primero
       console.log('🔐 Solicitando acceso a Freighter...');
       const accessResult = await freighter.requestAccess();
-      console.log('📊 Resultado de requestAccess:', accessResult);
 
       if (accessResult.error) {
         throw new Error(`Acceso denegado: ${accessResult.error}`);
       }
 
-      // Ahora sí, obtener la dirección
       console.log('🔑 Obteniendo dirección...');
       const addressResult = await freighter.getAddress();
-      console.log('📦 Resultado:', addressResult);
-      
+
       if (addressResult.address && addressResult.address !== '') {
         setPublicKey(addressResult.address);
         onConnect(addressResult.address);
@@ -85,24 +79,24 @@ export default function WalletConnect({ onConnect }: Props) {
     }
   };
 
-  const formatAddress = (addr: string) => 
+  const formatAddress = (addr: string) =>
     addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
-  
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(publicKey);
     alert('¡Copiado!');
   };
 
-  if (!mounted) {
-    return null;
-  }
+  if (!mounted) return null;
 
   return (
-    <div className="p-6 bg-white rounded-xl shadow-lg border border-gray-200">
-      <h2 className="text-2xl font-bold mb-4 text-center">Conectar Wallet</h2>
-      
+    <div className="p-6 bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-yellow-500/40 w-full max-w-md text-white">
+      <h2 className="text-2xl font-bold mb-4 text-center text-yellow-300">
+        Conectar Wallet
+      </h2>
+
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 rounded text-sm text-red-700 text-center">
+        <div className="mb-4 p-3 bg-red-900/40 border border-red-500 rounded text-sm text-red-200 text-center">
           {error}
         </div>
       )}
@@ -111,7 +105,7 @@ export default function WalletConnect({ onConnect }: Props) {
         <button
           onClick={connectWallet}
           disabled={loading}
-          className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 transition-all duration-200 flex items-center justify-center gap-2"
+          className="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-green-600 text-white font-bold rounded-lg hover:from-yellow-400 hover:to-green-500 disabled:opacity-50 transition-all duration-200 flex items-center justify-center gap-2 shadow-md"
         >
           {loading ? (
             <>
@@ -123,13 +117,17 @@ export default function WalletConnect({ onConnect }: Props) {
           )}
         </button>
       ) : (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-          <p className="text-green-800 font-bold text-center mb-2">✅ Wallet Conectada</p>
-          <div className="flex items-center justify-between bg-white px-3 py-2 rounded border">
-            <p className="text-sm font-mono break-all">{formatAddress(publicKey)}</p>
-            <button 
+        <div className="bg-white/10 backdrop-blur-lg p-4 rounded-lg border border-yellow-500/30 shadow-inner">
+          <p className="text-yellow-300 font-bold text-center mb-2">
+            ✅ Wallet Conectada
+          </p>
+          <div className="flex items-center justify-between bg-green-900/50 px-3 py-2 rounded border border-yellow-400/30">
+            <p className="text-sm font-mono break-all text-yellow-200">
+              {formatAddress(publicKey)}
+            </p>
+            <button
               onClick={copyToClipboard}
-              className="ml-2 px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+              className="ml-2 px-3 py-1 text-xs bg-gradient-to-r from-yellow-500 to-green-600 text-white rounded hover:from-yellow-400 hover:to-green-500 transition shadow-sm"
             >
               Copiar
             </button>
